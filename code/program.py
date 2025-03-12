@@ -3,29 +3,26 @@ import urx.urscript
 import urx.ursecmon  # https://github.com/jkur/python-urx
 from onrobot import RG
 from time import sleep
+import math3d as m3d
 
 FAST_VEL = 0.75
 SLOW_VEL = 0.3
 
-HOME_TARGET = [
-    3.1737236976623535,
-    -1.0330191415599366,
-    -1.7965435981750488,
-    -1.8829833469786585,
-    1.5768370628356934,
-    0.4197049140930176,
-]
-ABOVE_ROD_1_TARGET = [
-    2.5289292335510254,
-    -1.404278115635254,
-    -2.0054268836975098,
-    -1.3028734487346192,
-    1.5768728256225586,
-    -0.17434579530824834,
-]
+# position [m], rotation [rad]
+# HOME_TARGET = m3d.Transform((-0.495, 0.145, 0.416, -2.068, -2.365, 0.000))
+# ABOVE_ROD_0_TARGET = m3d.Transform((-0.472, 0.345, 0.259, -2.068, -2.365, 0.000))
+
+# all targets are 25 cm above actual targets for testing and debugging purposes
+HOME_TARGET = m3d.Transform((-0.495, 0.145, 0.666, -2.068, -2.365, 0.000))
+ABOVE_ROD_0_TARGET = m3d.Transform((-0.472, 0.345, 0.509, -2.068, -2.365, 0.000))
+
+# length in meters
+ROD_DISTANCE = 0.202  # 20 cm plus error
+DISK_HEIGHT = 0.30
+DISK_DIAMETERS = [0.13, 0.11, 0.9, 0.7]
 
 
-def openGripper():
+def openGripper() -> None:
     rg.open_gripper()
 
     while True:
@@ -34,7 +31,7 @@ def openGripper():
             break
 
 
-def closeGripper():
+def closeGripper() -> None:
     rg.close_gripper()
 
     while True:
@@ -43,15 +40,78 @@ def closeGripper():
             break
 
 
-def main():
-    rob.set_gravity([0.0, 0.0, 9.82])
+def translate(
+    pose: m3d.Transform, x: float = 0.0, y: float = 0.0, z: float = 0.0
+) -> m3d.Transform:
+    pose.pos.x += x
+    pose.pos.y += y
+    pose.pos.z += z
+
+    return pose
+
+
+def hanoi(
+    n: int, src: int, dest: int, aux: int, instructions: list[tuple] = []
+) -> list[tuple]:
+    if n == 1:
+        instructions.append((n, src, dest))
+        return instructions
+
+    hanoi(n - 1, src, aux, dest, instructions)
+    instructions.append((n, src, dest))
+    hanoi(n - 1, aux, dest, src, instructions)
+
+    return instructions
+
+
+def executeHanoi() -> None:
+    n = 4
+    rods = [n, 0, 0]
+    for disk, src, dest in hanoi(n, 0, 1, 2):
+        # go above src rod
+        aboveSrcTarget = translate(ABOVE_ROD_0_TARGET, y=-ROD_DISTANCE * src)
+        rob.set_pose(aboveSrcTarget, vel=SLOW_VEL)
+
+        # adjust height of gripper based on where the current disk is on src rod
+        pickupSrcTarget = translate(
+            aboveSrcTarget, z=-0.215 + DISK_HEIGHT * (n - rods[src])
+        )
+        rob.set_pose(pickupSrcTarget, vel=SLOW_VEL)
+        closeGripper()
+        rob.set_pose(aboveSrcTarget, vel=SLOW_VEL)
+
+        # go above dest rod
+        aboveDestTarget = translate(ABOVE_ROD_0_TARGET, y=-ROD_DISTANCE * dest)
+        rob.set_pose(aboveDestTarget, vel=SLOW_VEL)
+
+        # adjust height of gripper based on where to put the disk on dest rod
+        dropoffDestTarget = translate(
+            aboveDestTarget, z=-0.215 + DISK_HEIGHT * rods[dest]
+        )
+        rob.set_pose(dropoffDestTarget, vel=SLOW_VEL)
+        openGripper()
+        rob.set_pose(aboveDestTarget, vel=SLOW_VEL)
+
+        rods[src] -= 1
+        rods[dest] += 1
+
+
+def main() -> None:
     rob.set_payload(1.2)
+    sleep(0.2)  # give time for robot to process setup commands
 
-    # print(rob.getj())
+    executeHanoi()
 
-    rob.movej(HOME_TARGET, vel=FAST_VEL)
-    rob.movej(ABOVE_ROD_1_TARGET, vel=FAST_VEL)
-    rob.movel([0, 0, -0.23, 0, 0, 0], vel=SLOW_VEL, relative=True)
+    # print(rob.get_pose())
+
+    # rob.set_pose(HOME_TARGET, vel=FAST_VEL)
+    # rob.set_pose(ABOVE_ROD_0_TARGET, vel=FAST_VEL)
+
+    # rob.translate(
+    #     (0, -ROD_DISTANCE, 0), vel=SLOW_VEL
+    # )  # 20.2 cm between the rods plus error :/
+
+    # rob.translate((0, 0, -0.215), vel=SLOW_VEL)
 
 
 if __name__ == "__main__":
