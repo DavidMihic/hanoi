@@ -12,13 +12,13 @@ ACCEL = 0.02
 
 # position [m], rotation [rad]
 HOME_TARGET = m3d.Transform((-0.495, 0.145, 0.416, -2.068, -2.365, 0.000))
-ABOVE_ROD_0_TARGET = m3d.Transform((-0.502, 0.345, 0.255, -2.068, -2.365, 0.000))
+ABOVE_ROD_0_TARGET = m3d.Transform((-0.502, 0.345, 0.225, -2.068, -2.365, 0.000))
 
 # length in meters
-ROD_DISTANCE = 0.202  # 20 cm plus error
+ROD_DISTANCE = 0.201  # 20 cm plus error
 DISK_HEIGHT = 0.03
 DISK_DIAMETERS = [700, 900, 1100, 1300]  # 1/10mm, like onrobot rg likes it
-NUM_DISKS = 4
+NUM_DISKS = 5
 
 
 def moveGripper(width: int, force: int = 250) -> None:
@@ -58,20 +58,22 @@ def hanoi(
 def executeHanoi() -> None:
     rods = [NUM_DISKS, 0, 0]
     for disk, src, dest in hanoi(NUM_DISKS, 0, 1, 2):
+        xAdjustment = -0.01 if disk >= 4 else 0  # for larger disks move closer
+
         aboveSrcTarget = translate(
-            ABOVE_ROD_0_TARGET, y=-ROD_DISTANCE * src, x=(-0.01 if disk >= 4 else 0)
-        )  # adjust x for larger disk(s)
+            ABOVE_ROD_0_TARGET, y=-ROD_DISTANCE * src, x=xAdjustment
+        )
         pickupSrcTarget = translate(
-            aboveSrcTarget, z=-0.213 + DISK_HEIGHT * (rods[src] - 1)
+            aboveSrcTarget, z=-0.183 + DISK_HEIGHT * (rods[src] - 1)
         )
         aboveDestTarget = translate(
-            ABOVE_ROD_0_TARGET, y=-ROD_DISTANCE * dest, x=(-0.01 if disk >= 4 else 0)
+            ABOVE_ROD_0_TARGET, y=-ROD_DISTANCE * dest, x=xAdjustment
         )
         dropoffDestTarget = translate(
-            aboveDestTarget, z=-0.207 + DISK_HEIGHT * rods[dest]
+            aboveDestTarget, z=-0.177 + DISK_HEIGHT * rods[dest]
         )
 
-        rob.set_pose(aboveSrcTarget, vel=FAST_VEL, acc=ACCEL, wait=False)
+        rob.set_pose(aboveSrcTarget, vel=FAST_VEL, acc=ACCEL)
         moveGripper(DISK_DIAMETERS[disk - 1] + 100)  # open extra
         rob.set_pose(pickupSrcTarget, vel=SLOW_VEL, acc=ACCEL)
         moveGripper(
