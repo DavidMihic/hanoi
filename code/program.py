@@ -56,9 +56,19 @@ def hanoi(
 
 
 def executeHanoi() -> None:
+    moveGripper(1400)
     rods = [NUM_DISKS, 0, 0]
-    for disk, src, dest in hanoi(NUM_DISKS, 0, 1, 2):
-        xAdjustment = -0.01 if disk >= 4 else 0  # for larger disks move closer
+    instructions = hanoi(NUM_DISKS, 0, 1, 2) + [(NUM_DISKS, None, None)]
+    for i, (disk, src, dest) in enumerate(instructions):
+        if i == len(instructions) - 1:
+            return
+
+        # for larger disks move closer
+        xAdjustment = -0.01 if DISK_DIAMETERS[disk - 1] >= 1300 else 0
+        nextDisk = instructions[i + 1][0]
+        gripperOpenWidth = (
+            max(DISK_DIAMETERS[disk - 1], DISK_DIAMETERS[nextDisk - 1]) + 100
+        )
 
         aboveSrcTarget = translate(
             ABOVE_ROD_0_TARGET, y=-ROD_DISTANCE * src, x=xAdjustment
@@ -74,16 +84,14 @@ def executeHanoi() -> None:
         )
 
         rob.set_pose(aboveSrcTarget, vel=FAST_VEL, acc=ACCEL)
-        moveGripper(DISK_DIAMETERS[disk - 1] + 100)  # open extra
         rob.set_pose(pickupSrcTarget, vel=SLOW_VEL, acc=ACCEL)
-        moveGripper(
-            500
-        )  # don't close all the way so in case of an error a rod isn't grabbed
+        # don't close all the way so in case of an error a rod isn't grabbed
+        moveGripper(500)
         rob.set_pose(aboveSrcTarget, vel=SLOW_VEL, acc=ACCEL)
 
         rob.set_pose(aboveDestTarget, vel=FAST_VEL, acc=ACCEL)
         rob.set_pose(dropoffDestTarget, vel=SLOW_VEL, acc=ACCEL)
-        moveGripper(DISK_DIAMETERS[disk - 1] + 100)  # open extra
+        moveGripper(gripperOpenWidth)
         rob.set_pose(aboveDestTarget, vel=SLOW_VEL, acc=ACCEL)
 
         rods[src] -= 1
@@ -94,9 +102,9 @@ def main() -> None:
     rob.set_payload(1.2)
     sleep(0.2)  # give time for robot to process setup commands
 
-    rob.set_pose(HOME_TARGET, vel=FAST_VEL, acc=ACCEL, command="movej")
+    rob.set_pose(HOME_TARGET, vel=FAST_VEL, acc=ACCEL)
     executeHanoi()
-    rob.set_pose(HOME_TARGET, vel=FAST_VEL, acc=ACCEL, command="movej")
+    rob.set_pose(HOME_TARGET, vel=FAST_VEL, acc=ACCEL)
 
 
 if __name__ == "__main__":
