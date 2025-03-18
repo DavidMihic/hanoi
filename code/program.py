@@ -17,7 +17,7 @@ ABOVE_ROD_0_TARGET = m3d.Transform((-0.502, 0.345, 0.225, -2.068, -2.365, 0.000)
 # length in meters
 ROD_DISTANCE = 0.201  # 20 cm plus error
 DISK_HEIGHT = 0.03
-DISK_DIAMETERS = [700, 900, 1100, 1300]  # 1/10mm, like onrobot rg likes it
+DISK_DIAMETERS = [600, 700, 900, 1100, 1300]  # 1/10mm, like onrobot rg likes it
 NUM_DISKS = 5
 
 
@@ -100,6 +100,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    assert NUM_DISKS == len(DISK_DIAMETERS)
+
     rob = urx.Robot("192.168.1.5")
     rg = RG("rg6", "192.168.1.1", "502")
 
