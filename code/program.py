@@ -1,6 +1,6 @@
-import urx
+import urx  # https://github.com/jkur/python-urx
 import urx.urscript
-import urx.ursecmon  # https://github.com/jkur/python-urx
+import urx.ursecmon
 from onrobot import RG
 from time import sleep
 import math3d as m3d
