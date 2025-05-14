@@ -3,10 +3,6 @@ from time import sleep
 import math3d as m3d
 import json
 
-# offset from tip of sleeve to TCP, in meters
-SLEEVE_OFFSET_X = 0.025
-SLEEVE_OFFSET_Y = 0.025
-
 
 def waitForButton(digitalInIdx: int, msg: str) -> None:
     print(msg)
@@ -109,8 +105,8 @@ def main() -> None:
     #   Align po z osi
     #   okreni zadnji zglob robota tako da mu alat gleda u pozitivnom smjeru x osi postava
     #   gore desno (RX, RY, RZ) su kutevi, ali trebaju biti negativni
-    #   primjer -> u CRTA-i (RX, RY, RZ) = (0.220, 0.220, 0), pa rotation = (-2.220, -2.220, 0)
-    rotation = (-2.220, -2.220, 0)
+    #   primjer -> u CRTA-i (RX, RY, RZ) = (0.314, 0, 0), pa rotation = (-3.141, 0, 0)
+    rotation = (-3.141, 0, 0)
 
     originPose = m3d.Transform((*origin, *rotation))
     aboveFirstRodPose = translate(originPose, axes, x=0.075, y=0.075, z=0.2)
@@ -140,7 +136,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    print("Connecting to robot and gripper...")
+    print("Connecting to robot...")
     rob = urx.Robot("192.168.1.5")
 
     print("Starting program...\n")

@@ -1,24 +1,50 @@
+# pip install urx
 import urx  # https://github.com/jkur/python-urx
-import urx.urscript
-import urx.ursecmon
 from onrobot import RG
 from time import sleep
 import math3d as m3d
+import json
 
 # m/s, m/s^2
-FAST_VEL = 0.75
-SLOW_VEL = 0.3
-ACCEL = 0.02
+# FAST_VEL = 0.75 #TODO uncommentat, povecat po potrebi
+# SLOW_VEL = 0.3
+# ACCEL = 0.02
+FAST_VEL = 0.01
+SLOW_VEL = 0.01
+ACCEL = 0.01
 
-# position [m], rotation [rad]
-HOME_TARGET = m3d.Transform((-0.495, 0.145, 0.416, -2.068, -2.365, 0.000))
-ABOVE_ROD_0_TARGET = m3d.Transform((-0.502, 0.345, 0.225, -2.068, -2.365, 0.000))
+homeTarget = None
+aboveRod0Target = None
 
 # length in meters
-ROD_DISTANCE = 0.201  # 20 cm plus error
+ROD_DISTANCE = 0.201  # 20 cm plus error #TODO podesiti
 DISK_HEIGHT = 0.03
 DISK_DIAMETERS = [600, 700, 900, 1100, 1300]  # 1/10mm, like onrobot rg likes it
 NUM_DISKS = 5
+
+
+def loadCoordinateSystem(
+    filename: str = "coordinateSystem.json",
+) -> tuple[m3d.Transform, m3d.FreeVector]:
+    with open(filename, "r") as file:
+        obj = json.loads(file.read())
+
+    originPose = m3d.Transform((*obj["origin"], *obj["rotation"]))
+    posX = m3d.FreeVector(obj["posX"])
+    posY = m3d.FreeVector(obj["posY"])
+    posZ = m3d.FreeVector(obj["posZ"])
+
+    return originPose, (posX, posY, posZ)
+
+
+def calculateInitialTargets(
+    originPose: m3d.Transform, axes: tuple[m3d.FreeVector]
+) -> None:
+    global homeTarget, aboveRod0Target
+    homeTarget = translateWRTAxes(originPose, axes, x=0.075, y=0.275, z=0.35)
+    aboveRod0Target = translateWRTAxes(
+        originPose, axes, x=0.075 + 0.034, y=0.075, z=0.2
+    )
 
 
 def moveGripper(width: int, force: int = 250) -> None:
@@ -30,13 +56,17 @@ def moveGripper(width: int, force: int = 250) -> None:
             break
 
 
-def translate(
-    pose: m3d.Transform, x: float = 0.0, y: float = 0.0, z: float = 0.0
+def translateWRTAxes(
+    pose: m3d.Transform,
+    axes: tuple[m3d.FreeVector],
+    x: float = 0.0,
+    y: float = 0.0,
+    z: float = 0.0,
 ) -> m3d.Transform:
+    translBase = x * axes[0] + y * axes[1] + z * axes[2]
+
     newPose = m3d.Transform(pose)
-    newPose.pos.x += x
-    newPose.pos.y += y
-    newPose.pos.z += z
+    newPose.pos += translBase
 
     return newPose
 
@@ -55,7 +85,7 @@ def hanoi(
     return instructions
 
 
-def executeHanoi() -> None:
+def executeHanoi(axes: tuple[m3d.FreeVector]) -> None:
     moveGripper(1400)
     rods = [NUM_DISKS, 0, 0]
     instructions = hanoi(NUM_DISKS, 0, 1, 2) + [(NUM_DISKS, None, None)]
@@ -64,23 +94,23 @@ def executeHanoi() -> None:
             return
 
         # for larger disks move closer
-        xAdjustment = -0.01 if DISK_DIAMETERS[disk - 1] >= 1300 else 0
+        xAdjustment = -0.01 if DISK_DIAMETERS[disk - 1] >= 1300 else 0  # TODO podesiti
         nextDisk = instructions[i + 1][0]
         gripperOpenWidth = (
             max(DISK_DIAMETERS[disk - 1], DISK_DIAMETERS[nextDisk - 1]) + 100
         )
 
-        aboveSrcTarget = translate(
-            ABOVE_ROD_0_TARGET, y=-ROD_DISTANCE * src, x=xAdjustment
+        aboveSrcTarget = translateWRTAxes(
+            aboveRod0Target, axes, x=xAdjustment, y=-ROD_DISTANCE * src
         )
-        pickupSrcTarget = translate(
-            aboveSrcTarget, z=-0.183 + DISK_HEIGHT * (rods[src] - 1)
+        pickupSrcTarget = translateWRTAxes(
+            aboveSrcTarget, z=-0.183 + DISK_HEIGHT * (rods[src] - 1)  # TODO podesiti
         )
-        aboveDestTarget = translate(
-            ABOVE_ROD_0_TARGET, y=-ROD_DISTANCE * dest, x=xAdjustment
+        aboveDestTarget = translateWRTAxes(
+            aboveRod0Target, axes, y=-ROD_DISTANCE * dest, x=xAdjustment
         )
-        dropoffDestTarget = translate(
-            aboveDestTarget, z=-0.177 + DISK_HEIGHT * rods[dest]
+        dropoffDestTarget = translateWRTAxes(
+            aboveRod0Target, axes, z=-0.177 + DISK_HEIGHT * rods[dest]  # TODO podesiti
         )
 
         rob.set_pose(aboveSrcTarget, vel=FAST_VEL, acc=ACCEL)
@@ -99,12 +129,15 @@ def executeHanoi() -> None:
 
 
 def main() -> None:
-    rob.set_payload(1.2)
+    rob.set_digital_out(0, 1)  # pneumatic hold of tool
     sleep(0.2)  # give time for robot to process setup commands
 
-    rob.set_pose(HOME_TARGET, vel=FAST_VEL, acc=ACCEL)
-    executeHanoi()
-    rob.set_pose(HOME_TARGET, vel=FAST_VEL, acc=ACCEL)
+    originPose, axes = loadCoordinateSystem()
+    calculateInitialTargets(originPose, axes)
+
+    rob.set_pose(homeTarget, vel=FAST_VEL, acc=ACCEL)
+    executeHanoi(axes)
+    rob.set_pose(homeTarget, vel=FAST_VEL, acc=ACCEL)
 
 
 if __name__ == "__main__":
