@@ -5,10 +5,8 @@ import json
 
 
 def waitForButton(digitalInIdx: int, msg: str) -> None:
-    print(msg)
-    while not rob.get_digital_in(digitalInIdx):
-        pass
-
+    msg = "green" if digitalInIdx == 5 else "black"
+    input(f"Press key " + msg)
 
 def getPoint() -> m3d.PositionVector:
     waitForButton(5, "Press the green button to get the point...")
@@ -92,7 +90,6 @@ def main() -> None:
     sleep(0.2)
 
     waitForButton(4, "Press the black button to continue...")
-
     rob.set_freedrive(1)
     p1, p2, p3 = logPoints()
     rob.set_freedrive(0)
@@ -106,7 +103,7 @@ def main() -> None:
     #   okreni zadnji zglob robota tako da mu alat gleda u pozitivnom smjeru x osi postava
     #   gore desno (RX, RY, RZ) su kutevi, ali trebaju biti negativni
     #   primjer -> u CRTA-i (RX, RY, RZ) = (0.314, 0, 0), pa rotation = (-3.141, 0, 0)
-    rotation = (-3.141, 0, 0)
+    rotation = (-2.871, 1.206, 0.055)
 
     originPose = m3d.Transform((*origin, *rotation))
     aboveFirstRodPose = translate(originPose, axes, x=0.075, y=0.075, z=0.2)

@@ -1,4 +1,3 @@
-# pip install urx
 import urx  # https://github.com/jkur/python-urx
 from onrobot import RG
 from time import sleep
@@ -9,9 +8,9 @@ import json
 # FAST_VEL = 0.75 #TODO uncommentat, povecat po potrebi
 # SLOW_VEL = 0.3
 # ACCEL = 0.02
-FAST_VEL = 0.01
-SLOW_VEL = 0.01
-ACCEL = 0.01
+FAST_VEL = 0.5
+SLOW_VEL = 0.1
+ACCEL = 0.2
 
 homeTarget = None
 aboveRod0Target = None
@@ -47,7 +46,7 @@ def calculateInitialTargets(
     )
 
 
-def moveGripper(width: int, force: int = 250) -> None:
+def moveGripper(width: int, force: int = 300) -> None:
     rg.move_gripper(width, force)
 
     while True:
@@ -94,23 +93,27 @@ def executeHanoi(axes: tuple[m3d.FreeVector]) -> None:
             return
 
         # for larger disks move closer
-        xAdjustment = -0.01 if DISK_DIAMETERS[disk - 1] >= 1300 else 0  # TODO podesiti
+        xAdjustment = (
+            +0.025 if DISK_DIAMETERS[disk - 1] >= 1300 else +0.001
+        )  # TODO podesiti
         nextDisk = instructions[i + 1][0]
         gripperOpenWidth = (
             max(DISK_DIAMETERS[disk - 1], DISK_DIAMETERS[nextDisk - 1]) + 100
         )
 
         aboveSrcTarget = translateWRTAxes(
-            aboveRod0Target, axes, x=xAdjustment, y=-ROD_DISTANCE * src
+            aboveRod0Target, axes, x=xAdjustment, y=ROD_DISTANCE * src
         )
         pickupSrcTarget = translateWRTAxes(
-            aboveSrcTarget, z=-0.183 + DISK_HEIGHT * (rods[src] - 1)  # TODO podesiti
+            aboveSrcTarget,
+            axes,
+            z=-0.183 + DISK_HEIGHT * (rods[src] - 1),  # TODO podesiti
         )
         aboveDestTarget = translateWRTAxes(
-            aboveRod0Target, axes, y=-ROD_DISTANCE * dest, x=xAdjustment
+            aboveRod0Target, axes, y=ROD_DISTANCE * (dest), x=xAdjustment
         )
         dropoffDestTarget = translateWRTAxes(
-            aboveRod0Target, axes, z=-0.177 + DISK_HEIGHT * rods[dest]  # TODO podesiti
+            aboveDestTarget, axes, z=-0.177 + DISK_HEIGHT * rods[dest]  # TODO podesiti
         )
 
         rob.set_pose(aboveSrcTarget, vel=FAST_VEL, acc=ACCEL)

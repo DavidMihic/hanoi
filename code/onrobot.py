@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # https://github.com/takuya-ki/onrobot-rg
 
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
