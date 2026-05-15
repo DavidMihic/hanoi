@@ -4,33 +4,33 @@ import math3d as m3d
 import json
 
 
-def waitForButton(digitalInIdx: int, msg: str) -> None:
-    msg = "green" if digitalInIdx == 5 else "black"
-    input(f"Press key " + msg)
+def waitForButton(msg: str) -> None:
+    input(msg)
 
-def getPoint() -> m3d.PositionVector:
-    waitForButton(5, "Press the green button to get the point...")
+
+def getPoint(point_label: str) -> m3d.PositionVector:
+    waitForButton(f"Press Enter to log point: {point_label}")
     return rob.get_pos()
 
 
 def logPoints() -> tuple[m3d.PositionVector]:
-    p1 = getPoint()
+    p1 = getPoint("origin")
     print("p1", p1)
     rob.set_freedrive(1)
 
-    waitForButton(4, "Press the black button to continue...")
+    waitForButton("Press Enter to continue...")
 
-    p2 = getPoint()
+    p2 = getPoint("x axis")
     print("p2", p2)
     rob.set_freedrive(1)
 
-    waitForButton(4, "Press the black button to continue...")
+    waitForButton("Press Enter to continue...")
 
-    p3 = getPoint()
+    p3 = getPoint("y axis")
     print("p3", p3)
     rob.set_freedrive(1)
 
-    waitForButton(4, "Press the black button to continue...")
+    waitForButton("Press Enter to lock robot movement...")
 
     return p1, p2, p3
 
@@ -86,10 +86,9 @@ def saveCoordinateSystem(
 
 
 def main() -> None:
-    rob.set_digital_out(0, 1)  # pneumatski hold alata
     sleep(0.2)
 
-    waitForButton(4, "Press the black button to continue...")
+    waitForButton("Press Enter to unlock robot movement...")
     rob.set_freedrive(1)
     p1, p2, p3 = logPoints()
     rob.set_freedrive(0)
@@ -99,11 +98,11 @@ def main() -> None:
     # s ovim kutevima se treba igrati tijekom kalibracije
     # kutevi se mogu pronaci ovako:
     #   Move
+    #   OBAVEZNO -> FEATURE > Base
     #   Align po z osi
     #   okreni zadnji zglob robota tako da mu alat gleda u pozitivnom smjeru x osi postava
-    #   gore desno (RX, RY, RZ) su kutevi, ali trebaju biti negativni
-    #   primjer -> u CRTA-i (RX, RY, RZ) = (0.314, 0, 0), pa rotation = (-3.141, 0, 0)
-    rotation = (-2.871, 1.206, 0.055)
+    #   gore desno (RX, RY, RZ) su kutevi
+    rotation = (0.000, 0.000, 0.000)
 
     originPose = m3d.Transform((*origin, *rotation))
     aboveFirstRodPose = translate(originPose, axes, x=0.075, y=0.075, z=0.2)
@@ -111,17 +110,17 @@ def main() -> None:
     aboveThirdRodPose = translate(aboveSecondRodPose, axes, y=0.2)
 
     sleep(2)
-    waitForButton(5, "Press green button to move...")
+    waitForButton("Press Enter to move above rod 1...")
 
     print("moving to 1...")
     rob.set_pose(aboveFirstRodPose)
 
-    waitForButton(4, "press black button")
+    waitForButton("Press Enter to move above rod 2...")
 
     print("moving to 2...")
     rob.set_pose(aboveSecondRodPose)
 
-    waitForButton(4, "press black button")
+    waitForButton("Press Enter to move above rod 3...")
 
     print("moving to 3...")
     rob.set_pose(aboveThirdRodPose)

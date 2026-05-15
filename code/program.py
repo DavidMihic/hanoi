@@ -18,7 +18,8 @@ aboveRod0Target = None
 # length in meters
 ROD_DISTANCE = 0.201  # 20 cm plus error #TODO podesiti
 DISK_HEIGHT = 0.03
-DISK_DIAMETERS = [600, 700, 900, 1100, 1300]  # 1/10mm, like onrobot rg likes it
+# DISK_DIAMETERS = [600, 700, 900, 1100, 1300]  # 1/10mm, like onrobot rg likes it
+DISK_DIAMETERS = [750, 900, 1000, 1200, 1300]  # 1/10mm, like onrobot rg likes it
 NUM_DISKS = 5
 
 
@@ -132,7 +133,6 @@ def executeHanoi(axes: tuple[m3d.FreeVector]) -> None:
 
 
 def main() -> None:
-    rob.set_digital_out(0, 1)  # pneumatic hold of tool
     sleep(0.2)  # give time for robot to process setup commands
 
     originPose, axes = loadCoordinateSystem()

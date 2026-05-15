@@ -1,0 +1,28 @@
+NA ROBOTU:
+- UR+, provjeri moze li se gripper rucno otvarati/zatvarati
+  - ako ne moze, Installation > URCaps > OnRobot Setup, stisni Refresh tipku, probaj opet rucno pomicati gripper
+- gore Open > Installation > mihic.installation
+- postavi TCP -> Installation > General > TCP -> TCP_hanoi
+- postavi IP adresu -> gore desno sandwich menu > Settings > System > Network -> IP Address: 192.168.1.5 (nakon rada vratiti na IP adresu koja pise na robotu - 192.168.40.14)
+
+NA LAPTOPU:
+- pip install math3d pymodbus
+- pip install git+https://github.com/jkur/python-urx.git
+- postavi static ip address laptopa na 192.168.1.6, gateway 255.255.255.0
+
+PROMJENE U URX SOURCE KODU
+robot.py
+- set_pose funkcija, linija 105
+  - STARO: pose = URRobot.movex(self, command, t.pose_vector, acc=acc, vel=vel, wait=wait, threshold=threshold)
+  - NOVO: pose = URRobot.movex(self, command, t.pose_vector._data, acc=acc, vel=vel, wait=wait, threshold=threshold)
+- getl funkcija, linija 211
+  - STARO: pose = t.pose_vector._tolist()
+  - NOVO: pose = t.pose_vector._data
+
+KAKO BI LAPTOP MOGAO KONTROLIRATI ROBOTA POTREBNO JE ROBOTA POSTAVITI U REMOTE MODE
+gore desno tipka za toggle-ati nacin rada
+OVO JE POTREBNO I ZA KALIBRACIJU I ZA HANOI
+
+PAZI DA TI SE LAPTOP NE UGASI PRILIKOM IZVOĐENJA PROGRAMA, INAČE PROGRAM STANE!!!
+
+Ponekad se prilikom spajanja na robota dogodi timeout (Sockets znaju biti nestabilni), potrebno je samo ponovno pokrenuti program dok se ne uspije povezati. Ovo se nekad zna dogoditi i tijekom izvrsavanja programa, ali puno rjeđe, procedura je ista, restart nazalost.

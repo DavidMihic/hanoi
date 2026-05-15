@@ -1,6 +1,6 @@
 # https://github.com/takuya-ki/onrobot-rg
 
-from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+from pymodbus.client import ModbusTcpClient as ModbusClient
 
 
 class RG:
@@ -9,10 +9,6 @@ class RG:
         self.client = ModbusClient(
             ip,
             port=port,
-            stopbits=1,
-            bytesize=8,
-            parity="E",
-            baudrate=115200,
             timeout=1,
         )
         if gripper not in ["rg2", "rg6"]:
@@ -39,7 +35,7 @@ class RG:
         """Reads the current fingertip offset in 1/10 millimeters.
         Please note that the value is a signed two's complement number.
         """
-        result = self.client.read_holding_registers(address=258, count=1, unit=65)
+        result = self.client.read_holding_registers(address=258, count=1, device_id=65)
         offset_mm = result.registers[0] / 10.0
         return offset_mm
 
@@ -48,7 +44,7 @@ class RG:
         Please note that the width is provided without any fingertip offset,
         as it is measured between the insides of the aluminum fingers.
         """
-        result = self.client.read_holding_registers(address=267, count=1, unit=65)
+        result = self.client.read_holding_registers(address=267, count=1, device_id=65)
         width_mm = result.registers[0] / 10.0
         return width_mm
 
@@ -80,8 +76,8 @@ class RG:
         """
         # address   : register number
         # count     : number of registers to be read
-        # unit      : slave device address
-        result = self.client.read_holding_registers(address=268, count=1, unit=65)
+        # device_id      : slave device address
+        result = self.client.read_holding_registers(address=268, count=1, device_id=65)
         status = format(result.registers[0], "016b")
         status_list = [0] * 7
         if int(status[-1]):
@@ -112,7 +108,7 @@ class RG:
         """Reads current width between gripper fingers in 1/10 millimeters.
         The set fingertip offset is considered.
         """
-        result = self.client.read_holding_registers(address=275, count=1, unit=65)
+        result = self.client.read_holding_registers(address=275, count=1, device_id=65)
         width_mm = result.registers[0] / 10.0
         return width_mm
 
@@ -135,7 +131,7 @@ class RG:
                       Same as grip, but width is calculated
                       with the set fingertip offset.
         """
-        result = self.client.write_register(address=2, value=command, unit=65)
+        result = self.client.write_register(address=2, value=command, device_id=65)
 
     def set_target_force(self, force_val):
         """Writes the target force to be reached
@@ -143,7 +139,7 @@ class RG:
         It must be provided in 1/10th Newtons.
         The valid range is 0 to 400 for the RG2 and 0 to 1200 for the RG6.
         """
-        result = self.client.write_register(address=0, value=force_val, unit=65)
+        result = self.client.write_register(address=0, value=force_val, device_id=65)
 
     def set_target_width(self, width_val):
         """Writes the target width between
@@ -154,22 +150,22 @@ class RG:
         corrected for any fingertip offset,
         as it is measured between the insides of the aluminum fingers.
         """
-        result = self.client.write_register(address=1, value=width_val, unit=65)
+        result = self.client.write_register(address=1, value=width_val, device_id=65)
 
     def close_gripper(self, force_val=400):
         """Closes gripper."""
         params = [force_val, 0, 16]
         print("Start closing gripper.")
-        result = self.client.write_registers(address=0, values=params, unit=65)
+        result = self.client.write_registers(address=0, values=params, device_id=65)
 
     def open_gripper(self, force_val=400):
         """Opens gripper."""
         params = [force_val, self.max_width, 16]
         print("Start opening gripper.")
-        result = self.client.write_registers(address=0, values=params, unit=65)
+        result = self.client.write_registers(address=0, values=params, device_id=65)
 
     def move_gripper(self, width_val, force_val=400):
         """Moves gripper to the specified width."""
         params = [force_val, width_val, 16]
         print("Start moving gripper.")
-        result = self.client.write_registers(address=0, values=params, unit=65)
+        result = self.client.write_registers(address=0, values=params, device_id=65)
