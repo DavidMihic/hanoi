@@ -116,7 +116,7 @@ def executeHanoi(axes: tuple[m3d.FreeVector]) -> None:
         dropoffDestTarget = translateWRTAxes(
             aboveDestTarget, axes, z=-0.177 + DISK_HEIGHT * rods[dest]  # TODO podesiti
         )
-
+        m3d.PoseVector
         rob.set_pose(aboveSrcTarget, vel=FAST_VEL, acc=ACCEL)
         rob.set_pose(pickupSrcTarget, vel=SLOW_VEL, acc=ACCEL)
         # don't close all the way so in case of an error a rod isn't grabbed
@@ -133,6 +133,7 @@ def executeHanoi(axes: tuple[m3d.FreeVector]) -> None:
 
 
 def main() -> None:
+    #rob.set_digital_out(0, 1)  # pneumatic hold of tool
     sleep(0.2)  # give time for robot to process setup commands
 
     originPose, axes = loadCoordinateSystem()
@@ -146,8 +147,8 @@ def main() -> None:
 if __name__ == "__main__":
     assert NUM_DISKS == len(DISK_DIAMETERS)
 
-    rob = urx.Robot("192.168.1.5")
-    rg = RG("rg6", "192.168.1.1", "502")
+    rob = urx.Robot("192.168.40.14")
+    rg = RG("rg6", "192.168.40.180", "502")
 
     main()
 

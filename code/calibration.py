@@ -101,8 +101,10 @@ def main() -> None:
     #   OBAVEZNO -> FEATURE > Base
     #   Align po z osi
     #   okreni zadnji zglob robota tako da mu alat gleda u pozitivnom smjeru x osi postava
-    #   gore desno (RX, RY, RZ) su kutevi
-    rotation = (0.000, 0.000, 0.000)
+    #   gore desno (RX, RY, RZ) su kutevi, ali trebaju biti negativni
+    #   primjer -> u CRTA-i (RX, RY, RZ) = (0.314, 0, 0), pa rotation = (-3.141, 0, 0)
+    #rotation = (-2.871, 1.206, 0.055)
+    rotation =(0,0,0.78) # TODO treba ručno postaviti kalibraciju kuta alata
 
     originPose = m3d.Transform((*origin, *rotation))
     aboveFirstRodPose = translate(originPose, axes, x=0.075, y=0.075, z=0.2)
